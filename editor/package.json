@@ -1,0 +1,127 @@
+{
+  "name": "4d-debugger",
+  "displayName": "4D-Debugger",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Debuggers", "Programming Languages"
+  ],
+  "activationEvents": [
+    "onDebug"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+    ],
+    "breakpoints": [
+      {
+        "language": "4d"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "4d",
+        "languages": [
+          "4d"
+        ],
+        "label": "4D Debugger",
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Absolute path to a text file.",
+                "default": "${workspaceFolder}"
+              },
+              "trace": {
+                "type": "boolean",
+                "description": "Enable logging of the Debug Adapter Protocol.",
+                "default": true
+              },
+              "port":{ 
+                "type": "number",
+                "description": "Port to connect to the 4D server",
+                "default": 19815
+              }
+            }
+          },
+          "attach": {
+            "required": [
+              "program"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Absolute path to a text file.",
+                "default": "${workspaceFolder}/${command:AskForProgramName}"
+              },
+              "trace": {
+                "type": "boolean",
+                "description": "Enable logging of the Debug Adapter Protocol.",
+                "default": true
+              },
+              "port":{ 
+                "type": "number",
+                "description": "Port to connect to the 4D server",
+                "default": 19815
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "4d",
+            "request": "launch",
+            "name": "Ask for file name",
+            "program": "${workspaceFolder}",
+            "port": 19815
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "4D Debug: Launch",
+            "description": "A new configuration for 'debugging' a user selected markdown file.",
+            "body": {
+              "type": "4d",
+              "request": "launch",
+              "name": "Ask for file name",
+              "program": "${workspaceFolder}"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^7.11.0",
+    "@typescript-eslint/parser": "^7.11.0",
+    "eslint": "^8.57.0",
+    "esbuild": "^0.21.5",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.4.5",
+    "@vscode/test-cli": "^0.0.9",
+    "@vscode/test-electron": "^2.4.0"
+  }
+}
