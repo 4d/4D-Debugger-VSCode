@@ -1,6 +1,8 @@
 {
   "name": "4d-debugger",
   "displayName": "4D-Debugger",
+	"license": "4D",
+	"publisher": "4D",
   "description": "",
   "version": "0.0.1",
   "engines": {
