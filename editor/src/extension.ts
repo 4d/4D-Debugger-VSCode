@@ -1,9 +1,12 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
+import * as childProcess from 'child_process';
 
-const kPortNumber : number = 19815;
+
+const kPortNumber: number = 19815;
 export function activate(context: vscode.ExtensionContext) {
-	console.log('Congratulations, your extension "4d-debug" is now active!');
 	start(context);
 }
 
@@ -45,6 +48,23 @@ export function start(context: vscode.ExtensionContext) {
 
 class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 
+	getPort(inPackagePath: string | undefined): number {
+		if (!inPackagePath) {
+			return kPortNumber;
+		}
+		let settingsPath = path.join(inPackagePath, "Project/Sources/settings.4DSettings");
+		if (!fs.existsSync(settingsPath)) {
+			return kPortNumber;
+		}
+		const content = fs.readFileSync(settingsPath, 'utf8');
+		const match = content.match(/publication_port\s*=\s*"(\d+)"/i);
+		if (match) {
+			return parseInt(match[1]) + 2;
+		}
+		else {
+			return kPortNumber;
+		}
+	}
 	/**
 	 * Message a debug configuration just before a debug session is being launched,
 	 * e.g. add all missing attributes to the debug configuration.
@@ -59,12 +79,23 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 				config.type = '4d';
 				config.name = '4D:Attach';
 				config.request = 'attach';
-				config.port = kPortNumber;
+				config.port = this.getPort(folder?.uri.fsPath);
 				config.program = '${workspaceFolder}';
 				config.stopOnEntry = true;
 			}
 		}
 
+		if (config.request === 'launch') {
+			if (!config.program) {
+				config.program = folder?.uri.fsPath + `/Project/${folder?.name}.4DProject`;
+			}
+
+			if (!config.executable) {
+				return vscode.window.showInformationMessage("No 4D available").then(_ => {
+					return undefined;	// abort launch
+				});
+			}
+		}
 		if (!config.program) {
 			return vscode.window.showInformationMessage("Cannot find a program to debug").then(_ => {
 				return undefined;	// abort launch
@@ -79,7 +110,15 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 
 class DebugAdapterServerDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
 
-	createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+	createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined)
+		: vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+
+		if (session.configuration.request === 'launch') {
+			const projectPath = session.configuration.program;
+			const process = childProcess.spawn(session.configuration.executable, [
+				'--project', projectPath, '--debugger'
+			]);
+		}
 		let port = session?.configuration.port ?? kPortNumber;
 		// make VS Code connect to debug server
 		return new vscode.DebugAdapterServer(port);

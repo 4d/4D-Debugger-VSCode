@@ -13,13 +13,11 @@
     "url": "https://github.com/4d/4D-Debugger-VSCode"
   },
   "categories": [
-    "Debuggers",
-    "Programming Languages"
+    "Debuggers"
   ],
   "activationEvents": [
     "onDebug",
-    "onDebugResolve:4d",
-    "onDebugInitialConfigurations"
+    "onLanguage:4d"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -39,13 +37,18 @@
         "configurationAttributes": {
           "launch": {
             "required": [
+              "executable",
               "program"
             ],
             "properties": {
               "program": {
                 "type": "string",
-                "description": "Absolute path to a text file.",
+                "description": "Absolute path to a 4D executable.",
                 "default": "${workspaceFolder}"
+              },
+              "executable": {
+                "type": "string",
+                "description": "Absolute path to a 4D executable."
               },
               "trace": {
                 "type": "boolean",
@@ -55,23 +58,17 @@
               "args": {
                 "type": "array",
                 "description": "Arguments passed to the 4D server"
-              },
-              "port": {
-                "type": "number",
-                "description": "Port to connect to the 4D server",
-                "default": 19815
               }
             }
           },
           "attach": {
             "required": [
-              "program",
               "port"
             ],
             "properties": {
               "program": {
                 "type": "string",
-                "description": "Absolute path to a text file.",
+                "description": "Absolute path to a 4D file or 4D Project.",
                 "default": "${workspaceFolder}/${command:AskForProgramName}"
               },
               "trace": {
@@ -104,7 +101,6 @@
               "type": "4d",
               "request": "attach",
               "name": "Attach",
-              "program": "${workspaceFolder}",
               "port": 19815
             }
           },
@@ -116,9 +112,7 @@
               "request": "launch",
               "name": "Launch",
               "program": "${workspaceFolder}",
-              "args": [
-                "--project"
-              ]
+              "executable": ""
             }
           }
         ]
