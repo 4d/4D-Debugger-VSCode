@@ -1,27 +1,29 @@
 {
   "name": "4d-debugger",
   "displayName": "4D-Debugger",
-	"license": "4D",
-	"publisher": "4D",
+  "license": "4D",
+  "publisher": "4D",
   "description": "",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.90.0"
   },
   "repository": {
-		"type": "git",
-		"url": "https://github.com/4d/4D-Debugger-VSCode"
-	},
+    "type": "git",
+    "url": "https://github.com/4d/4D-Debugger-VSCode"
+  },
   "categories": [
-    "Debuggers", "Programming Languages"
+    "Debuggers",
+    "Programming Languages"
   ],
   "activationEvents": [
-    "onDebug"
+    "onDebug",
+    "onDebugResolve:4d",
+    "onDebugInitialConfigurations"
   ],
   "main": "./dist/extension.js",
   "contributes": {
-    "commands": [
-    ],
+    "commands": [],
     "breakpoints": [
       {
         "language": "4d"
@@ -50,7 +52,11 @@
                 "description": "Enable logging of the Debug Adapter Protocol.",
                 "default": true
               },
-              "port":{ 
+              "args": {
+                "type": "array",
+                "description": "Arguments passed to the 4D server"
+              },
+              "port": {
                 "type": "number",
                 "description": "Port to connect to the 4D server",
                 "default": 19815
@@ -59,7 +65,8 @@
           },
           "attach": {
             "required": [
-              "program"
+              "program",
+              "port"
             ],
             "properties": {
               "program": {
@@ -72,7 +79,7 @@
                 "description": "Enable logging of the Debug Adapter Protocol.",
                 "default": true
               },
-              "port":{ 
+              "port": {
                 "type": "number",
                 "description": "Port to connect to the 4D server",
                 "default": 19815
@@ -83,21 +90,35 @@
         "initialConfigurations": [
           {
             "type": "4d",
-            "request": "launch",
-            "name": "Ask for file name",
+            "request": "attach",
+            "name": "Attach",
             "program": "${workspaceFolder}",
             "port": 19815
           }
         ],
         "configurationSnippets": [
           {
+            "label": "4D Debug: Attach",
+            "description": "Attach the 4D app to a remote debugger",
+            "body": {
+              "type": "4d",
+              "request": "attach",
+              "name": "Attach",
+              "program": "${workspaceFolder}",
+              "port": 19815
+            }
+          },
+          {
             "label": "4D Debug: Launch",
-            "description": "A new configuration for 'debugging' a user selected markdown file.",
+            "description": "Attach the 4D app to a remote debugger",
             "body": {
               "type": "4d",
               "request": "launch",
-              "name": "Ask for file name",
-              "program": "${workspaceFolder}"
+              "name": "Launch",
+              "program": "${workspaceFolder}",
+              "args": [
+                "--project"
+              ]
             }
           }
         ]
