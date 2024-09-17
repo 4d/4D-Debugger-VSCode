@@ -112,14 +112,21 @@ class DebugAdapterServerDescriptorFactory implements vscode.DebugAdapterDescript
 
 	createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined)
 		: vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+		const port = session?.configuration.port ?? kPortNumber;
 
 		if (session.configuration.request === 'launch') {
 			const projectPath = session.configuration.program;
 			const process = childProcess.spawn(session.configuration.executable, [
-				'--project', projectPath, '--debugger'
+				'--project', projectPath, '--dap', port.toString()
 			]);
+
+			process.on("message", (message) => {
+				if(message === "DAP_READY") {
+					return new vscode.DebugAdapterServer(port);
+				}
+				console.log(message);
+			});
 		}
-		let port = session?.configuration.port ?? kPortNumber;
 		// make VS Code connect to debug server
 		return new vscode.DebugAdapterServer(port);
 	}
