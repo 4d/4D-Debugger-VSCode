@@ -72,7 +72,7 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 	resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
 
 		// if launch.json is missing or empty
-		console.log(config);
+		console.log("CONFIG", config);
 		if (!config.type && !config.request && !config.name) {
 			const editor = vscode.window.activeTextEditor;
 			if (editor && editor.document.languageId === '4d') {
@@ -85,9 +85,26 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 			}
 		}
 
-		if (config.request === 'launch') {
+		if (config.request === 'launch' && folder) {
+			const configProgram =path.join(folder.uri.fsPath, "Project", `${folder.name}.4DProject`);
 			if (!config.program) {
-				config.program = folder?.uri.fsPath + `/Project/${folder?.name}.4DProject`;
+				config.program = configProgram;
+			}
+			else
+			{
+				if(fs.lstatSync(config.program).isDirectory())
+				{
+					config.program = configProgram;
+				}
+				else
+				{
+					const program = path.parse(config.program);
+					if(program.ext !== ".4DProject")
+					{
+						config.file = config.program;
+						config.program = configProgram;
+					}
+				}
 			}
 
 			if (!config.executable) {
@@ -110,25 +127,52 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 
 class DebugAdapterServerDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
 
-	createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined)
-		: vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+	async createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined)
+		: Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> {
 		const port = session?.configuration.port ?? kPortNumber;
+		console.log("SESSION", session.configuration);
 
 		if (session.configuration.request === 'launch') {
-			const projectPath = session.configuration.program;
-			const process = childProcess.spawn(session.configuration.executable, [
-				'--project', projectPath, '--dap', port.toString()
-			]);
-
-			process.on("message", (message) => {
-				if(message === "DAP_READY") {
-					return new vscode.DebugAdapterServer(port);
-				}
-				console.log(message);
+			const programPath = session.configuration.program;
+			const executablePath = path.parse(session.configuration.executable);
+			let promise : Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> = new Promise((resolve, reject)=> {
+				let args = [
+					'--project', programPath, '--dap'
+				];
+				console.log(args)
+				const process = childProcess.spawn(executablePath.base, args, {cwd: executablePath.dir});
+	
+				process.stdout.on("data", (chunk: Buffer) => {
+					const str = chunk.toString();
+					if(str.includes("DAP_READY")) {
+						//The server may be delayed
+						setTimeout(()=> {
+							resolve(new vscode.DebugAdapterServer(port));
+						}, 100)
+					}
+					console.log(str);
+				});
+				process.stderr.on("data", (chunk: Buffer) => {
+					const str = chunk.toString();
+					console.error(str);
+				});
+				process.on("error", (err) => {
+					console.log(err);
+					reject();
+				});
+				process.on("exit", (err) => {
+					console.log(err);
+					reject();
+				});
 			});
+			return await promise;
 		}
-		// make VS Code connect to debug server
-		return new vscode.DebugAdapterServer(port);
+		else
+		{
+			// make VS Code connect to debug server
+			return new vscode.DebugAdapterServer(port);
+		}
+
 	}
 
 }
