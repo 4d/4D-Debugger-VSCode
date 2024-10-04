@@ -41,7 +41,7 @@ export function start(context: vscode.ExtensionContext) {
 			];
 		}
 	}, vscode.DebugConfigurationProviderTriggerKind.Dynamic));
-	let factory: vscode.DebugAdapterDescriptorFactory = new DebugAdapterServerDescriptorFactory();
+	const factory: vscode.DebugAdapterDescriptorFactory = new DebugAdapterServerDescriptorFactory();
 	context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('4d', factory));
 
 }
@@ -52,7 +52,7 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 		if (!inPackagePath) {
 			return kPortNumber;
 		}
-		let settingsPath = path.join(inPackagePath, "Project/Sources/settings.4DSettings");
+		const settingsPath = path.join(inPackagePath, "Project/Sources/settings.4DSettings");
 		if (!fs.existsSync(settingsPath)) {
 			return kPortNumber;
 		}
@@ -69,7 +69,7 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 	 * Message a debug configuration just before a debug session is being launched,
 	 * e.g. add all missing attributes to the debug configuration.
 	 */
-	resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
+	resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, _token?: CancellationToken): ProviderResult<DebugConfiguration> {
 
 		// if launch.json is missing or empty
 		console.log("CONFIG", config);
@@ -108,13 +108,13 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 			}
 
 			if (!config.executable) {
-				return vscode.window.showInformationMessage("No 4D available").then(_ => {
+				return vscode.window.showInformationMessage("No 4D available").then(() => {
 					return undefined;	// abort launch
 				});
 			}
 		}
 		if (!config.program) {
-			return vscode.window.showInformationMessage("Cannot find a program to debug").then(_ => {
+			return vscode.window.showInformationMessage("Cannot find a program to debug").then(() => {
 				return undefined;	// abort launch
 			});
 		}
@@ -172,7 +172,5 @@ class DebugAdapterServerDescriptorFactory implements vscode.DebugAdapterDescript
 			// make VS Code connect to debug server
 			return new vscode.DebugAdapterServer(port);
 		}
-
 	}
-
 }
