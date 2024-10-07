@@ -37,27 +37,19 @@
         "configurationAttributes": {
           "launch": {
             "required": [
-              "executable",
-              "program"
+              "port",
+              "method"
             ],
             "properties": {
-              "program": {
+              "method": {
                 "type": "string",
-                "description": "Absolute path to a 4D executable.",
-                "default": "${workspaceFolder}"
+                "description": "Absolute path to a 4D method",
+                "default": "${file}"
               },
-              "executable": {
-                "type": "string",
-                "description": "Absolute path to a 4D executable."
-              },
-              "trace": {
-                "type": "boolean",
-                "description": "Enable logging of the Debug Adapter Protocol.",
-                "default": true
-              },
-              "args": {
-                "type": "array",
-                "description": "Arguments passed to the 4D server"
+              "port": {
+                "type": "number",
+                "description": "Port to connect to the 4D server",
+                "default": 19815
               }
             }
           },
@@ -66,16 +58,6 @@
               "port"
             ],
             "properties": {
-              "program": {
-                "type": "string",
-                "description": "Absolute path to a 4D file or 4D Project.",
-                "default": "${workspaceFolder}/${command:AskForProgramName}"
-              },
-              "trace": {
-                "type": "boolean",
-                "description": "Enable logging of the Debug Adapter Protocol.",
-                "default": true
-              },
               "port": {
                 "type": "number",
                 "description": "Port to connect to the 4D server",
@@ -89,14 +71,20 @@
             "type": "4d",
             "request": "attach",
             "name": "Attach",
-            "program": "${workspaceFolder}",
+            "port": 19815
+          },
+          {
+            "type": "4d",
+            "request": "launch",
+            "name": "Launch",
+            "method": "${file}",
             "port": 19815
           }
         ],
         "configurationSnippets": [
           {
             "label": "4D Debug: Attach",
-            "description": "Attach the 4D app to a remote debugger",
+            "description": "Attach to the server",
             "body": {
               "type": "4d",
               "request": "attach",
@@ -106,13 +94,13 @@
           },
           {
             "label": "4D Debug: Launch",
-            "description": "Attach the 4D app to a remote debugger",
+            "description": "Launch to the server and launch a method",
             "body": {
               "type": "4d",
               "request": "launch",
               "name": "Launch",
-              "program": "${workspaceFolder}",
-              "executable": ""
+              "method": "${file}",
+              "port": 19815
             }
           }
         ]
