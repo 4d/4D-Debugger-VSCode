@@ -37,14 +37,25 @@
         "configurationAttributes": {
           "launch": {
             "required": [
-              "port",
-              "method"
+              "method",
+              "project",
+              "executable"
             ],
             "properties": {
               "method": {
                 "type": "string",
-                "description": "Absolute path to a 4D method",
+                "description": "The 4D Method To launch",
                 "default": "${file}"
+              },
+              "project": {
+                "type": "string",
+                "description": "Absolute path to a 4D Project",
+                "default": "${workspaceFolder}/Project/${workspaceFolderBasename}.4DProject"
+              },
+              "executable": {
+                "type": "string",
+                "description": "Absolute path to a 4D Server",
+                "default": ""
               },
               "port": {
                 "type": "number",
@@ -70,15 +81,15 @@
           {
             "type": "4d",
             "request": "attach",
-            "name": "Attach",
-            "port": 19815
+            "name": "Attach"
           },
           {
             "type": "4d",
             "request": "launch",
             "name": "Launch",
             "method": "${file}",
-            "port": 19815
+            "project": "${workspaceFolder}/Project/${workspaceFolderBasename}.4DProject",
+            "executable": ""
           }
         ],
         "configurationSnippets": [
@@ -88,8 +99,7 @@
             "body": {
               "type": "4d",
               "request": "attach",
-              "name": "Attach",
-              "port": 19815
+              "name": "Attach"
             }
           },
           {
@@ -100,7 +110,8 @@
               "request": "launch",
               "name": "Launch",
               "method": "${file}",
-              "port": 19815
+              "project": "${workspaceFolder}/Project/${workspaceFolderBasename}.4DProject",
+              "executable": ""
             }
           }
         ]

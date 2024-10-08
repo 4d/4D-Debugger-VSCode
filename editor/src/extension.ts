@@ -43,25 +43,29 @@ export function start(context: vscode.ExtensionContext) {
 	const factory: vscode.DebugAdapterDescriptorFactory = new DebugAdapterServerDescriptorFactory();
 	context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('4d', factory));
 	context.subscriptions.push(
-        debug.onDidStartDebugSession((session) => {
-			if(session.configuration.name === "Launch")
-			{
+		debug.onDidStartDebugSession((session) => {
+			if (session.configuration.name === "Launch") {
 				const methodPath = path.parse(session.configuration.method);
-
 				const args = {
 					expression: methodPath.name,
 					context: 'repl'
-				  };
+				};
 				debug.activeDebugSession?.customRequest("evaluate", args)
 			}
-        }),
-    );
+		}),
+	);
 
 	context.subscriptions.push(
-        debug.onDidTerminateDebugSession((session) => {
+		debug.onDidReceiveDebugSessionCustomEvent((session) => {
+			console.log("event")
+		}),
+	);
+
+	context.subscriptions.push(
+		debug.onDidTerminateDebugSession((session) => {
 			console.log("Session is done")
-        }),
-    );
+		}),
+	);
 }
 
 class ConfigurationProvider implements vscode.DebugConfigurationProvider {
@@ -107,12 +111,21 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 	}
 
 	resolveDebugConfigurationWithSubstitutedVariables(folder: WorkspaceFolder | undefined, debugConfiguration: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
+		const configPort = this.getPort(folder?.uri.fsPath);
+		if (!debugConfiguration.port) {
+			debugConfiguration.port = configPort;
+		}
+
 		if (debugConfiguration.request === 'launch' && folder) {
 			const configMethod = debugConfiguration.method
-			
+			const configProject = debugConfiguration.project
 
-			if (!configMethod || path.parse(configMethod).ext !=  ".4dm") {
+			if (!configMethod || path.parse(configMethod).ext != ".4dm") {
 				vscode.window.showErrorMessage(`The method "${configMethod}" to launch is not a method`);
+			}
+
+			if (!configProject || path.parse(configProject).ext != ".4DProject") {
+				vscode.window.showErrorMessage(`The Project "${configProject}" does not exist`);
 			}
 		}
 		return debugConfiguration
@@ -121,22 +134,22 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 }
 
 
-function launch_exe(session: vscode.DebugSession, port : number) : Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>>
-{
-	const programPath = session.configuration.program;
+function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> {
+	let projectPath : string = session.configuration.project;
+	projectPath = projectPath.replaceAll("/", path.sep)
 	const executablePath = path.parse(session.configuration.executable);
-	return new Promise((resolve, reject)=> {
+	return new Promise((resolve, reject) => {
 		let args = [
-			'--project', programPath, '--dap'
+			'--project', projectPath, '--dap'
 		];
 		console.log(args)
-		const process = childProcess.spawn(executablePath.base, args, {cwd: executablePath.dir});
+		const process = childProcess.spawn(executablePath.base, args, { cwd: executablePath.dir });
 
 		process.stdout.on("data", (chunk: Buffer) => {
 			const str = chunk.toString();
-			if(str.includes("DAP_READY")) {
+			if (str.includes("DAP_READY")) {
 				//The server may be delayed
-				setTimeout(()=> {
+				setTimeout(() => {
 					resolve(new vscode.DebugAdapterServer(port));
 				}, 100)
 			}
@@ -163,6 +176,9 @@ class DebugAdapterServerDescriptorFactory implements vscode.DebugAdapterDescript
 	async createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined)
 		: Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> {
 		const port = session?.configuration.port ?? kPortNumber;
+		if (session.configuration.request === "launch") {
+			return launch_exe(session, port);
+		}
 		console.log("SESSION", session.configuration);
 		return new vscode.DebugAdapterServer(port);
 	}
