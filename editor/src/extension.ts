@@ -44,13 +44,19 @@ export function start(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('4d', factory));
 	context.subscriptions.push(
 		debug.onDidStartDebugSession((session) => {
-			if (session.configuration.name === "Launch") {
-				const methodPath = path.parse(session.configuration.method);
-				const args = {
-					expression: methodPath.name,
-					context: 'repl'
-				};
-				debug.activeDebugSession?.customRequest("evaluate", args)
+			//request name
+			if (session.configuration.request === "launch" 
+				|| session.configuration.request === "attach") {
+				if(session.configuration.method)
+				{
+					const methodPath = path.parse(session.configuration.method);
+					const args = {
+						expression: methodPath.name,
+						context: 'repl'
+					};
+					debug.activeDebugSession?.customRequest("evaluate", args)
+				}
+
 			}
 		}),
 	);
@@ -122,6 +128,12 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 
 			if (!configMethod || path.parse(configMethod).ext != ".4dm") {
 				vscode.window.showErrorMessage(`The method "${configMethod}" to launch is not a method`);
+				return undefined;
+			}
+
+			if (!configProject || path.parse(configProject).ext != ".4DProject") {
+				vscode.window.showErrorMessage(`The Project "${configProject}" does not exist`);
+				return undefined;
 			}
 
 			if (!configProject || path.parse(configProject).ext != ".4DProject") {
