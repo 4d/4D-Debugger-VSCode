@@ -74,6 +74,10 @@
                 "description": "Port to connect to the 4D server",
                 "default": 19815
               },
+              "host": {
+                "type":"string",
+                "description": "host to connect to the 4D server"
+              },
               "method": {
                 "type": "string",
                 "description": "The 4D Method To launch",

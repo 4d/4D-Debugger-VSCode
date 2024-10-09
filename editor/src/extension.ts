@@ -3,9 +3,11 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken, debug } from 'vscode';
 import * as childProcess from 'child_process';
+import * as Net from 'net';
 
 
 const kPortNumber: number = 19815;
+let extensionContext: vscode.ExtensionContext;
 export function activate(context: vscode.ExtensionContext) {
 	start(context);
 }
@@ -17,9 +19,7 @@ export function deactivate() {
 
 
 export function start(context: vscode.ExtensionContext) {
-
-	const provider = new ConfigurationProvider();
-	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('4d', provider));
+	extensionContext = context;
 
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('4d', {
 		provideDebugConfigurations(folder: WorkspaceFolder | undefined): ProviderResult<DebugConfiguration[]> {
@@ -35,20 +35,20 @@ export function start(context: vscode.ExtensionContext) {
 					name: "4D:Launch",
 					request: "launch",
 					type: "4d",
-					method: "${file}"
+					method: "${file}",
+					project: "${workspaceFolder}/Project/${workspaceFolderBasename}.4DProject",
+					executable: "",
 				}
 			];
 		}
 	}, vscode.DebugConfigurationProviderTriggerKind.Dynamic));
-	const factory: vscode.DebugAdapterDescriptorFactory = new DebugAdapterServerDescriptorFactory();
-	context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('4d', factory));
+	context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('4d', new DebugAdapterServerDescriptorFactory()));
 	context.subscriptions.push(
 		debug.onDidStartDebugSession((session) => {
 			//request name
-			if (session.configuration.request === "launch" 
+			if (session.configuration.request === "launch"
 				|| session.configuration.request === "attach") {
-				if(session.configuration.method)
-				{
+				if (session.configuration.method) {
 					const methodPath = path.parse(session.configuration.method);
 					const args = {
 						expression: methodPath.name,
@@ -67,11 +67,7 @@ export function start(context: vscode.ExtensionContext) {
 		}),
 	);
 
-	context.subscriptions.push(
-		debug.onDidTerminateDebugSession((session) => {
-			console.log("Session is done")
-		}),
-	);
+
 }
 
 class ConfigurationProvider implements vscode.DebugConfigurationProvider {
@@ -126,7 +122,7 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 			const configMethod = debugConfiguration.method
 			const configProject = debugConfiguration.project
 
-			if (!configMethod || path.parse(configMethod).ext != ".4dm") {
+			if (configMethod && path.parse(configMethod).ext != ".4dm") {
 				vscode.window.showErrorMessage(`The method "${configMethod}" to launch is not a method`);
 				return undefined;
 			}
@@ -145,9 +141,33 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 
 }
 
+function addLogger(port: number, resolve: any, host?: string) {
+	const client = new Net.Socket();
+	const server = Net.createServer((socket: Net.Socket) => {
+		socket.on('data', (data: Buffer) => {
+			console.log('Client -> Server:', data.toString());
+			client.write(data);
+		});
+
+		client.on('data', (data: Buffer) => {
+			console.log('Server -> Client:', data.toString());
+			socket.write(data);
+		});
+	});
+
+	client.connect(port, () => {
+		console.log('Connected to the debug server');
+	});
+
+	server.listen(0, () => {
+		let proxyPort = (server.address() as Net.AddressInfo).port
+		console.log(`Proxy server listening on port ${proxyPort}`);
+		resolve(new vscode.DebugAdapterServer(proxyPort, host))
+	});
+}
 
 function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> {
-	let projectPath : string = session.configuration.project;
+	let projectPath: string = session.configuration.project;
 	projectPath = projectPath.replaceAll("/", path.sep)
 	const executablePath = path.parse(session.configuration.executable);
 	return new Promise((resolve, reject) => {
@@ -160,38 +180,42 @@ function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.
 		process.stdout.on("data", (chunk: Buffer) => {
 			const str = chunk.toString();
 			if (str.includes("DAP_READY")) {
-				//The server may be delayed
-				setTimeout(() => {
-					resolve(new vscode.DebugAdapterServer(port));
-				}, 100)
+				resolve(new vscode.DebugAdapterServer(port));
 			}
-			console.log(str);
+			vscode.debug.activeDebugConsole.append(str);
 		});
 		process.stderr.on("data", (chunk: Buffer) => {
 			const str = chunk.toString();
-			console.error(str);
+			vscode.debug.activeDebugConsole.append(str);
 		});
 		process.on("error", (err) => {
-			console.log(err);
+			vscode.debug.activeDebugConsole.append(err.message);
 			reject();
 		});
 		process.on("exit", (err) => {
-			console.log(err);
 			reject();
 		});
+
+		extensionContext.subscriptions.push(
+			debug.onDidTerminateDebugSession((session) => {
+				process.kill();
+			}),
+		);
 	});
 }
 
 
 class DebugAdapterServerDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
 
+
 	async createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined)
 		: Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> {
 		const port = session?.configuration.port ?? kPortNumber;
+		const host = session?.configuration.host ?? undefined;
 		if (session.configuration.request === "launch") {
 			return launch_exe(session, port);
 		}
-		console.log("SESSION", session.configuration);
-		return new vscode.DebugAdapterServer(port);
+		return new vscode.DebugAdapterServer(port, host);
+
 	}
 }
