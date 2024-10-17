@@ -4,8 +4,9 @@ import * as fs from 'fs';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken, debug } from 'vscode';
 import * as childProcess from 'child_process';
 import * as Net from 'net';
-
-
+import * as os from 'os';
+import { InfoPlistManager } from './infoplist';
+import { LabeledVersion } from './labeledVersion';
 const kPortNumber: number = 19815;
 let extensionContext: vscode.ExtensionContext;
 export function activate(context: vscode.ExtensionContext) {
@@ -63,7 +64,6 @@ export function start(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		debug.onDidReceiveDebugSessionCustomEvent((session) => {
-			console.log("event")
 		}),
 	);
 
@@ -96,7 +96,6 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 	resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, _token?: CancellationToken): ProviderResult<DebugConfiguration> {
 
 		// if launch.json is missing or empty
-		console.log("CONFIG", config);
 		if (!config.type && !config.request && !config.name) {
 			const editor = vscode.window.activeTextEditor;
 			if (editor && editor.document.languageId === '4d') {
@@ -131,10 +130,6 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 				vscode.window.showErrorMessage(`The Project "${configProject}" does not exist`);
 				return undefined;
 			}
-
-			if (!configProject || path.parse(configProject).ext != ".4DProject") {
-				vscode.window.showErrorMessage(`The Project "${configProject}" does not exist`);
-			}
 		}
 		return debugConfiguration
 	}
@@ -166,10 +161,30 @@ function addLogger(port: number, resolve: any, host?: string) {
 	});
 }
 
+function getExePath(inPath: string) : string {
+
+	let serverPath = inPath;
+
+	const type = os.type();
+	const dirname = path.basename(serverPath);
+	const infoPlist = InfoPlistManager.fromExePath(serverPath);
+
+	if (type === "Darwin" && dirname.endsWith(".app")) {
+
+		let nameExecutable = infoPlist.getExeName();
+		if (nameExecutable === "") {
+			nameExecutable = path.parse(serverPath).name;
+		}
+		serverPath = path.join(serverPath, "Contents", "MacOS", nameExecutable);
+	}
+	return serverPath;
+
+}
+
 function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> {
 	let projectPath: string = session.configuration.project;
 	projectPath = projectPath.replaceAll("/", path.sep)
-	const executablePath = path.parse(session.configuration.executable);
+	const executablePath = path.parse(getExePath(session.configuration.executable));
 	return new Promise((resolve, reject) => {
 		let args = [
 			'--project', projectPath, '--dap'

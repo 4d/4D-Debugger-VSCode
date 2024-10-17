@@ -37,7 +37,6 @@
         "configurationAttributes": {
           "launch": {
             "required": [
-              "method",
               "project",
               "executable"
             ],
@@ -90,13 +89,15 @@
           {
             "type": "4d",
             "request": "attach",
-            "name": "Attach"
+            "name": "Attach",
+            "port":19815
           },
           {
             "type": "4d",
             "request": "attach",
             "name": "Attach and Run",
-            "method": "${file}"
+            "method": "${file}",
+            "port":19815
           },
           {
             "type": "4d",
@@ -127,7 +128,7 @@
           },
           {
             "label": "4D Debug: Attach and run",
-            "description": "Attach to the server",
+            "description": "Attach to the server and launch the current method file",
             "body": {
               "type": "4d",
               "request": "attach",
@@ -138,7 +139,7 @@
           },
           {
             "label": "4D Debug: Launch",
-            "description": "Launch to the server and launch a method",
+            "description": "Launch a server",
             "body": {
               "type": "4d",
               "request": "launch",
@@ -151,7 +152,7 @@
           },
           {
             "label": "4D Debug: Launch and run",
-            "description": "Launch to the server and launch a method",
+            "description": "Launch a server and launch the current method file",
             "body": {
               "type": "4d",
               "request": "launch",
