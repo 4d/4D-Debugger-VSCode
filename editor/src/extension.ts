@@ -6,7 +6,6 @@ import * as childProcess from 'child_process';
 import * as Net from 'net';
 import * as os from 'os';
 import { InfoPlistManager } from './infoplist';
-import { LabeledVersion } from './labeledVersion';
 const kPortNumber: number = 19815;
 let extensionContext: vscode.ExtensionContext;
 export function activate(context: vscode.ExtensionContext) {
@@ -66,8 +65,6 @@ export function start(context: vscode.ExtensionContext) {
 		debug.onDidReceiveDebugSessionCustomEvent((session) => {
 		}),
 	);
-
-
 }
 
 class ConfigurationProvider implements vscode.DebugConfigurationProvider {
@@ -106,8 +103,6 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 				config.stopOnEntry = true;
 			}
 		}
-
-
 		return config;
 	}
 
@@ -161,7 +156,7 @@ function addLogger(port: number, resolve: any, host?: string) {
 	});
 }
 
-function getExePath(inPath: string) : string {
+function getExePath(inPath: string): string {
 
 	let serverPath = inPath;
 
@@ -178,50 +173,50 @@ function getExePath(inPath: string) : string {
 		serverPath = path.join(serverPath, "Contents", "MacOS", nameExecutable);
 	}
 	return serverPath;
-
 }
 
 function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> {
-	let projectPath: string = session.configuration.project;
-	projectPath = projectPath.replaceAll("/", path.sep)
+	const projectPath = session.configuration.project.replaceAll("/", path.sep)
 	const executablePath = path.parse(getExePath(session.configuration.executable));
 	return new Promise((resolve, reject) => {
-		let args = [
-			'--project', projectPath, '--dap'
-		];
-		console.log(args)
-		const process = childProcess.spawn(executablePath.base, args, { cwd: executablePath.dir });
+		try {
+			const process = childProcess.spawn(executablePath.base, 
+				['--project', projectPath, '--dap'], 
+				{ cwd: executablePath.dir });
 
-		process.stdout.on("data", (chunk: Buffer) => {
-			const str = chunk.toString();
-			if (str.includes("DAP_READY")) {
-				resolve(new vscode.DebugAdapterServer(port));
-			}
-			vscode.debug.activeDebugConsole.append(str);
-		});
-		process.stderr.on("data", (chunk: Buffer) => {
-			const str = chunk.toString();
-			vscode.debug.activeDebugConsole.append(str);
-		});
-		process.on("error", (err) => {
-			vscode.debug.activeDebugConsole.append(err.message);
-			reject();
-		});
-		process.on("exit", (err) => {
-			reject();
-		});
+			process.stdout.on("data", (chunk: Buffer) => {
+				const str = chunk.toString();
+				if (str.includes("DAP_READY")) {
+					resolve(new vscode.DebugAdapterServer(port));
+				}
+				vscode.debug.activeDebugConsole.append(str);
+			});
+			process.stderr.on("data", (chunk: Buffer) => {
+				const str = chunk.toString();
+				vscode.debug.activeDebugConsole.append(str);
+			});
+			process.on("error", (err) => {
+				vscode.debug.activeDebugConsole.append(err.message);
+				reject();
+			});
+			process.on("exit", (err) => {
+				reject();
+			});
 
-		extensionContext.subscriptions.push(
-			debug.onDidTerminateDebugSession((session) => {
-				process.kill();
-			}),
-		);
+			extensionContext.subscriptions.push(
+				debug.onDidTerminateDebugSession((session) => {
+					process.kill();
+				}),
+			);
+		}
+		catch (e) {
+			reject(e)
+		}
 	});
 }
 
 
 class DebugAdapterServerDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
-
 
 	async createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined)
 		: Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> {
@@ -231,6 +226,5 @@ class DebugAdapterServerDescriptorFactory implements vscode.DebugAdapterDescript
 			return launch_exe(session, port);
 		}
 		return new vscode.DebugAdapterServer(port, host);
-
 	}
 }
