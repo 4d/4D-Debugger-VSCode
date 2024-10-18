@@ -39,4 +39,4 @@ jobs:
       with:
         name: package
         path: |
-          ./editor/dist
+          ./editor/dist/*.vsix
