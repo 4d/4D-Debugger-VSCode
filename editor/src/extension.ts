@@ -35,7 +35,7 @@ export function start(context: vscode.ExtensionContext) {
 					name: "4D:Launch",
 					request: "launch",
 					type: "4d",
-					method: "${file}",
+					program: "${file}",
 					project: "${workspaceFolder}/Project/${workspaceFolderBasename}.4DProject",
 					executable: "",
 				}
@@ -48,8 +48,8 @@ export function start(context: vscode.ExtensionContext) {
 			//request name
 			if (session.configuration.request === "launch"
 				|| session.configuration.request === "attach") {
-				if (session.configuration.method) {
-					const methodPath = path.parse(session.configuration.method);
+				if (session.configuration.program) {
+					const methodPath = path.parse(session.configuration.program);
 					const args = {
 						expression: methodPath.name,
 						context: 'repl'
@@ -113,7 +113,7 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 		}
 
 		if (debugConfiguration.request === 'launch' && folder) {
-			const configMethod = debugConfiguration.method
+			const configMethod = debugConfiguration.program
 			const configProject = debugConfiguration.project
 
 			if (configMethod && path.parse(configMethod).ext != ".4dm") {
@@ -177,11 +177,14 @@ function getExePath(inPath: string): string {
 
 function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> {
 	const projectPath = session.configuration.project.replaceAll("/", path.sep)
-	const executablePath = path.parse(getExePath(session.configuration.executable));
+	const executablePath = path.parse(getExePath(session.configuration.exec));
+	const listArgs : []= session.configuration.execArgs;
 	return new Promise((resolve, reject) => {
 		try {
+			const args = ['--project', projectPath, '--dap', ...listArgs]
+			console.log(args)
 			const process = childProcess.spawn(executablePath.base, 
-				['--project', projectPath, '--dap'], 
+				['--project', projectPath, '--dap', ...listArgs], 
 				{ cwd: executablePath.dir });
 
 			process.stdout.on("data", (chunk: Buffer) => {
@@ -189,6 +192,7 @@ function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.
 				if (str.includes("DAP_READY")) {
 					resolve(new vscode.DebugAdapterServer(port));
 				}
+				console.log(str)
 				vscode.debug.activeDebugConsole.append(str);
 			});
 			process.stderr.on("data", (chunk: Buffer) => {
