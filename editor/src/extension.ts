@@ -178,7 +178,7 @@ function getExePath(inPath: string): string {
 function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> {
 	const projectPath = session.configuration.project.replaceAll("/", path.sep)
 	const executablePath = path.parse(getExePath(session.configuration.exec));
-	const listArgs : [] = session.configuration.execArgs;
+	const listArgs : [] = session.configuration.execArgs ?? [];
 	return new Promise((resolve, reject) => {
 		try {
 			const process = childProcess.spawn(executablePath.base, 
