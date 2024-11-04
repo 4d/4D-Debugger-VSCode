@@ -20,7 +20,8 @@ export function deactivate() {
 
 export function start(context: vscode.ExtensionContext) {
 	extensionContext = context;
-
+	const provider = new ConfigurationProvider();
+	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('4d', provider));
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('4d', {
 		provideDebugConfigurations(folder: WorkspaceFolder | undefined): ProviderResult<DebugConfiguration[]> {
 			console.log('provideDebugConfigurations', folder);
@@ -37,7 +38,8 @@ export function start(context: vscode.ExtensionContext) {
 					type: "4d",
 					program: "${file}",
 					project: "${workspaceFolder}/Project/${workspaceFolderBasename}.4DProject",
-					executable: "",
+					exec: "",
+					execArgs: []
 				}
 			];
 		}
@@ -125,6 +127,13 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 				vscode.window.showErrorMessage(`The Project "${configProject}" does not exist`);
 				return undefined;
 			}
+
+			if (!debugConfiguration.exec || !fs.existsSync(debugConfiguration.exec)) {
+				vscode.window.showErrorMessage(`The executable "${debugConfiguration.exec}" does not exist`);
+				return undefined;
+			}
+			if(!debugConfiguration.execArgs)
+				debugConfiguration.execArgs = [];
 		}
 		return debugConfiguration
 	}
@@ -176,11 +185,16 @@ function getExePath(inPath: string): string {
 }
 
 function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> {
-	const projectPath = session.configuration.project.replaceAll("/", path.sep)
+	const projectPath = session.configuration.project.replaceAll("/", path.sep);
 	const executablePath = path.parse(getExePath(session.configuration.exec));
 	const listArgs : [] = session.configuration.execArgs ?? [];
 	return new Promise((resolve, reject) => {
 		try {
+			const fullPath = path.join(executablePath.dir, executablePath.base)
+			if(!fs.existsSync(fullPath))
+			{
+				reject(`The ${fullPath} does not exist.`)
+			}
 			const process = childProcess.spawn(executablePath.base, 
 				['--project', projectPath, '--dap', ...listArgs], 
 				{ cwd: executablePath.dir });
@@ -190,7 +204,6 @@ function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.
 				if (str.includes("DAP_READY")) {
 					resolve(new vscode.DebugAdapterServer(port));
 				}
-				console.log(str)
 				vscode.debug.activeDebugConsole.append(str);
 			});
 			process.stderr.on("data", (chunk: Buffer) => {
@@ -212,7 +225,7 @@ function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.
 			);
 		}
 		catch (e) {
-			reject(e)
+			reject(`Cannot launch the debugger: ${e}`)
 		}
 	});
 }
