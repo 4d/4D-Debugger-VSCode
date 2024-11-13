@@ -195,9 +195,8 @@ function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.
 			{
 				reject(`The ${fullPath} does not exist.`)
 			}
-			const process = childProcess.spawn(executablePath.base, 
-				['--project', projectPath, '--dap', ...listArgs], 
-				{ cwd: executablePath.dir });
+			const process = childProcess.spawn(fullPath, 
+				['--project', projectPath, '--dap', ...listArgs]);
 
 			process.stdout.on("data", (chunk: Buffer) => {
 				const str = chunk.toString();
