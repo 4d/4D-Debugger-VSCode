@@ -3,6 +3,7 @@
   "displayName": "4D-Debugger",
   "license": "4D",
   "publisher": "4D",
+  "icon": "images/icon.png",
   "description": "",
   "version": "0.0.1",
   "engines": {
