@@ -118,12 +118,12 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 			const configMethod = debugConfiguration.program
 			const configProject = debugConfiguration.project
 
-			if (configMethod && path.parse(configMethod).ext != ".4dm") {
+			if (configMethod && path.parse(configMethod).ext !== ".4dm") {
 				vscode.window.showErrorMessage(`The method "${configMethod}" to launch is not a method`);
 				return undefined;
 			}
 
-			if (!configProject || path.parse(configProject).ext != ".4DProject") {
+			if (!configProject || path.parse(configProject).ext !== ".4DProject") {
 				vscode.window.showErrorMessage(`The Project "${configProject}" does not exist`);
 				return undefined;
 			}
