@@ -195,6 +195,7 @@ function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.
 			{
 				reject(`The ${fullPath} does not exist.`)
 			}
+			console.log(`Launching ${fullPath} ${['--project', projectPath, '--dap', ...listArgs]}`);
 			const process = childProcess.spawn(fullPath, 
 				['--project', projectPath, '--dap', ...listArgs]);
 
