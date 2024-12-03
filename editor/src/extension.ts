@@ -220,7 +220,7 @@ function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.
 
 			extensionContext.subscriptions.push(
 				debug.onDidTerminateDebugSession((session) => {
-					process.kill();
+					process.kill('SIGKILL');
 				}),
 			);
 		}
