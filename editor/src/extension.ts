@@ -6,6 +6,7 @@ import * as childProcess from 'child_process';
 import * as Net from 'net';
 import * as os from 'os';
 import { InfoPlistManager } from './infoplist';
+import { MockDebugSession } from './mockDebug';
 const kPortNumber: number = 19815;
 let extensionContext: vscode.ExtensionContext;
 export function activate(context: vscode.ExtensionContext) {
@@ -184,7 +185,7 @@ function getExePath(inPath: string): string {
 	return serverPath;
 }
 
-function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> {
+function launch_exe(session: vscode.DebugSession, port: number): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
 	const projectPath = session.configuration.project.replaceAll("/", path.sep);
 	const executablePath = path.parse(getExePath(session.configuration.exec));
 	const listArgs : [] = session.configuration.execArgs ?? [];
@@ -209,10 +210,21 @@ function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.
 			});
 			process.stderr.on("data", (chunk: Buffer) => {
 				const str = chunk.toString();
-				vscode.debug.activeDebugConsole.append(str);
+				str.split("\n").forEach((line) => {
+					if (line.includes("DAP_Error")) {
+						let message = line.replace("DAP_Error", "Error").trim();
+						resolve(new vscode.DebugAdapterInlineImplementation(new MockDebugSession(message)));
+					}
+					vscode.debug.activeDebugConsole.append(str);
+				});
 			});
 			process.on("error", (err) => {
 				vscode.debug.activeDebugConsole.append(err.message);
+				if(err.message.startsWith("DAP_Error"))
+				{
+					let message = err.message.replace("DAP_Error", "Error");
+					resolve(new vscode.DebugAdapterInlineImplementation(new MockDebugSession(message)));
+				}
 			});
 			process.on("exit", (err) => {
 				vscode.debug.activeDebugConsole.append(`Process exited with code ${err}`);
@@ -234,8 +246,8 @@ function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.
 
 class DebugAdapterServerDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
 
-	async createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined)
-		: Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> {
+	createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined)
+		: vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
 		const port = session?.configuration.port ?? kPortNumber;
 		const host = session?.configuration.host ?? undefined;
 		if (session.configuration.request === "launch") {
