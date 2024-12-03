@@ -193,7 +193,8 @@ function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.
 			const fullPath = path.join(executablePath.dir, executablePath.base)
 			if(!fs.existsSync(fullPath))
 			{
-				reject(`The ${fullPath} does not exist.`)
+				vscode.debug.activeDebugConsole.append(`The ${fullPath} does not exist.`);
+				resolve(undefined);
 			}
 			console.log(`Launching ${fullPath} ${['--project', projectPath, '--dap', ...listArgs]}`);
 			const process = childProcess.spawn(fullPath, 
@@ -212,10 +213,9 @@ function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.
 			});
 			process.on("error", (err) => {
 				vscode.debug.activeDebugConsole.append(err.message);
-				reject();
 			});
 			process.on("exit", (err) => {
-				reject();
+				vscode.debug.activeDebugConsole.append(`Process exited with code ${err}`);
 			});
 
 			extensionContext.subscriptions.push(
@@ -225,7 +225,8 @@ function launch_exe(session: vscode.DebugSession, port: number): Promise<vscode.
 			);
 		}
 		catch (e) {
-			reject(`Cannot launch the debugger: ${e}`)
+			vscode.debug.activeDebugConsole.append(`Cannot launch the debugger: ${e}`);
+			resolve(undefined);
 		}
 	});
 }
