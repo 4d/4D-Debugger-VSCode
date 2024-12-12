@@ -6,8 +6,9 @@ This extension developed by **[4D](https://www.4d.com/)** provides a debugger fo
 ## Quick start
 
 1. Install the 4D Debugger extension in VS Code.
-2. Configure the `launch.json` file (see below).
-3. Open a 4D project folder or a 4D method (.4dm) file and start debugging.
+2. Declare your default 4D Server path in the Settings.
+3. Open a 4D project folder and run a 4D method (.4dm) file.
+4. Start debugging.
 
 All 4D blog posts about this extension are available [here](https://blog.4d.com/tag/vsdebugger/).
 
@@ -19,7 +20,7 @@ All 4D blog posts about this extension are available [here](https://blog.4d.com/
 
 ## Configuration
 
-The following properties can be set in the `launch.json` file.
+The following properties can be set in the `launch.json` file for each project. 
 
 ### "attach" and "attach and run" properties
 
@@ -39,12 +40,11 @@ To execute some code on the currently launched 4D Server.
 |Property|	Type|	Description	|Default|
 |---|---|---|---|
 |program|text|	The 4D Method To launch	|"${file}"|
-|"host"	|text	|host to connect to the 4D server||
 
 
 ### "launch" and "launch and run" properties
 
-To launch a referenced 4D Server application before executing some code.
+To launch the referenced 4D Server application before executing some code.
 
 #### Required properties
 
@@ -54,8 +54,9 @@ To launch a referenced 4D Server application before executing some code.
 |request|text|always "launch"|"launch"|
 |name|text|can be "Launch" or "Launch and Run"||
 |project|text|Absolute path to a 4D Project|"${workspaceFolder}/Project/${workspaceFolderBasename}.4DProject"|
-|exec|text|Absolute path to a 4D Server|""|
+|exec|text|Absolute path to a 4D Server. Overrides the default path set in the Settings|""|
 
+**Note:** {workspaceFolder} and {workspaceFolderBasename} are automatically filled when a project is already opened. 
 
 #### Optional properties
 
@@ -72,4 +73,4 @@ The port number of the remote debugger cannot be modified directly; it is howeve
 
 ## Links
 
-See https://code.visualstudio.com/docs/editor/debugging
+See the [VS Code debugger documentation](https://code.visualstudio.com/docs/editor/debugging)
