@@ -13,7 +13,7 @@ All 4D blog posts about this extension are available [here](https://blog.4d.com/
 
 ## Requirements
 
-- The 4D Debugger extension can only be used with 4D Server.
+- The 4D Debugger extension can only be used with 4D Server 20 R8 or higher.
 - The VS Code with 4D Debugger extension and 4D Server must be on the same machine. 
 - No other debugger must be [attached to 4D Server](https://developer.4d.com/docs/Debugging/debugging-remote). 
 
