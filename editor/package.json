@@ -175,7 +175,16 @@
           }
         ]
       }
-    ]
+    ],
+    "configuration": {
+      "properties": {
+        "4D-Debugger.executable": {
+          "type": "string",
+          "description": "Path to the 4D Server executable",
+          "default": ""
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -191,7 +200,7 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",
-    "@types/node": "20.x",
+    "@types/node": "22.x",
     "@types/vscode": "^1.90.0",
     "@vscode/debugadapter": "^1.68.0",
     "@vscode/test-cli": "^0.0.10",

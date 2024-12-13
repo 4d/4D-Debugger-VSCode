@@ -7,9 +7,11 @@ import * as Net from 'net';
 import * as os from 'os';
 import { InfoPlistManager } from './infoplist';
 import { MockDebugSession } from './mockDebug';
+import { Ctx } from './context';
 const kPortNumber: number = 19815;
-let extensionContext: vscode.ExtensionContext;
+let ctx: Ctx;
 export function activate(context: vscode.ExtensionContext) {
+	ctx = new Ctx(context);
 	start(context);
 }
 
@@ -20,7 +22,6 @@ export function deactivate() {
 
 
 export function start(context: vscode.ExtensionContext) {
-	extensionContext = context;
 	const provider = new ConfigurationProvider();
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('4d', provider));
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('4d', {
@@ -118,6 +119,10 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 		if (debugConfiguration.request === 'launch' && folder) {
 			const configMethod = debugConfiguration.program
 			const configProject = debugConfiguration.project
+			if(debugConfiguration.exec === "") {
+				debugConfiguration.exec = ctx.config.getDefaultServerPath || "";
+			}
+			const exec = debugConfiguration.exec
 
 			if (configMethod && path.parse(configMethod).ext !== ".4dm") {
 				vscode.window.showErrorMessage(`The method "${configMethod}" to launch is not a method`);
@@ -129,11 +134,14 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 				return undefined;
 			}
 
-			if (!debugConfiguration.exec || !fs.existsSync(debugConfiguration.exec)) {
-				vscode.window.showErrorMessage(`The executable "${debugConfiguration.exec}" does not exist`);
+			if (!exec || !fs.existsSync(exec)) {
+				vscode.window.showErrorMessage(`The executable "${exec}" does not exist`);
+				if (exec === "") {
+					vscode.window.showInformationMessage(`The launch.json is missing the "exec" attribute. Please set the path to the 4D Server.`);
+				}
 				return undefined;
 			}
-			if(!debugConfiguration.execArgs)
+			if (!debugConfiguration.execArgs)
 				debugConfiguration.execArgs = [];
 		}
 		return debugConfiguration
@@ -188,17 +196,16 @@ function getExePath(inPath: string): string {
 function launch_exe(session: vscode.DebugSession, port: number): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
 	const projectPath = session.configuration.project.replaceAll("/", path.sep);
 	const executablePath = path.parse(getExePath(session.configuration.exec));
-	const listArgs : [] = session.configuration.execArgs ?? [];
+	const listArgs: [] = session.configuration.execArgs ?? [];
 	return new Promise((resolve, reject) => {
 		try {
 			const fullPath = path.join(executablePath.dir, executablePath.base)
-			if(!fs.existsSync(fullPath))
-			{
+			if (!fs.existsSync(fullPath)) {
 				vscode.debug.activeDebugConsole.append(`The ${fullPath} does not exist.`);
 				resolve(undefined);
 			}
 			console.log(`Launching ${fullPath} ${['--project', projectPath, '--dap', ...listArgs]}`);
-			const process = childProcess.spawn(fullPath, 
+			const process = childProcess.spawn(fullPath,
 				['--project', projectPath, '--dap', ...listArgs]);
 
 			process.stdout.on("data", (chunk: Buffer) => {
@@ -220,8 +227,7 @@ function launch_exe(session: vscode.DebugSession, port: number): vscode.Provider
 			});
 			process.on("error", (err) => {
 				vscode.debug.activeDebugConsole.append(err.message);
-				if(err.message.startsWith("DAP_Error"))
-				{
+				if (err.message.startsWith("DAP_Error")) {
 					let message = err.message.replace("DAP_Error", "Error");
 					resolve(new vscode.DebugAdapterInlineImplementation(new MockDebugSession(message)));
 				}
@@ -230,7 +236,7 @@ function launch_exe(session: vscode.DebugSession, port: number): vscode.Provider
 				vscode.debug.activeDebugConsole.append(`Process exited with code ${err}`);
 			});
 
-			extensionContext.subscriptions.push(
+			ctx.extensionContext.subscriptions.push(
 				debug.onDidTerminateDebugSession((session) => {
 					process.kill('SIGKILL');
 				}),
