@@ -38,8 +38,7 @@
         "configurationAttributes": {
           "launch": {
             "required": [
-              "project",
-              "exec"
+              "project"
             ],
             "properties": {
               "program": {
@@ -66,6 +65,10 @@
                 "type": "number",
                 "description": "Port to connect to the 4D server",
                 "default": 19815
+              },
+              "host": {
+                "type": "string",
+                "description": "host to connect to the 4D server"
               }
             }
           },
@@ -111,7 +114,6 @@
             "name": "Launch and Run",
             "program": "${file}",
             "project": "${workspaceFolder}/Project/${workspaceFolderBasename}.4DProject",
-            "exec": "",
             "execArgs": []
           },
           {
@@ -119,7 +121,6 @@
             "request": "launch",
             "name": "Launch",
             "project": "${workspaceFolder}/Project/${workspaceFolderBasename}.4DProject",
-            "exec": "",
             "execArgs": []
           }
         ],
@@ -154,7 +155,6 @@
               "name": "Launch",
               "program": "",
               "project": "${workspaceFolder}/Project/${workspaceFolderBasename}.4DProject",
-              "exec": "",
               "execArgs": [],
               "port":19815
             }
@@ -168,7 +168,6 @@
               "name": "Launch and Run",
               "program": "${file}",
               "project": "${workspaceFolder}/Project/${workspaceFolderBasename}.4DProject",
-              "exec": "",
               "execArgs": [],
               "port":19815
             }

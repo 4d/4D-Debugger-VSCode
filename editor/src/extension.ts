@@ -119,7 +119,7 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 		if (debugConfiguration.request === 'launch' && folder) {
 			const configMethod = debugConfiguration.program
 			const configProject = debugConfiguration.project
-			if(debugConfiguration.exec === "") {
+			if(!debugConfiguration.exec) {
 				debugConfiguration.exec = ctx.config.getDefaultServerPath || "";
 			}
 			const exec = debugConfiguration.exec
@@ -193,7 +193,7 @@ function getExePath(inPath: string): string {
 	return serverPath;
 }
 
-function launch_exe(session: vscode.DebugSession, port: number): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+function launch_exe(session: vscode.DebugSession, port: number, host : string | undefined): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
 	const projectPath = session.configuration.project.replaceAll("/", path.sep);
 	const executablePath = path.parse(getExePath(session.configuration.exec));
 	const listArgs: [] = session.configuration.execArgs ?? [];
@@ -211,7 +211,7 @@ function launch_exe(session: vscode.DebugSession, port: number): vscode.Provider
 			process.stdout.on("data", (chunk: Buffer) => {
 				const str = chunk.toString();
 				if (str.includes("DAP_READY")) {
-					resolve(new vscode.DebugAdapterServer(port));
+					resolve(new vscode.DebugAdapterServer(port, host));
 				}
 				vscode.debug.activeDebugConsole.append(str);
 			});
@@ -258,7 +258,7 @@ class DebugAdapterServerDescriptorFactory implements vscode.DebugAdapterDescript
 		const port = session?.configuration.port ?? kPortNumber;
 		const host = session?.configuration.host ?? undefined;
 		if (session.configuration.request === "launch") {
-			return launch_exe(session, port);
+			return launch_exe(session, port, host);
 		}
 		return new vscode.DebugAdapterServer(port, host);
 	}

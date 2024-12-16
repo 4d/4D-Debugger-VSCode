@@ -54,7 +54,6 @@ To launch the referenced 4D Server application before executing some code.
 |request|text|always "launch"|"launch"|
 |name|text|can be "Launch" or "Launch and Run"||
 |project|text|Absolute path to a 4D Project|"${workspaceFolder}/Project/${workspaceFolderBasename}.4DProject"|
-|exec|text|Absolute path to a 4D Server. Overrides the default path set in the Settings|""|
 
 **Note:** {workspaceFolder} and {workspaceFolderBasename} are automatically filled when a project is already opened. 
 
@@ -64,6 +63,7 @@ To launch the referenced 4D Server application before executing some code.
 |---|---|---|---|
 |program|text|	The 4D Method To launch	|"${file}"|
 |execArgs	|array	|Collection of arguments to the 4D Debugger|[]|
+|exec|text|Absolute path to a 4D Server. Overrides the default path set in the Settings|""|
 |port|number|Port to connect to the 4D server|19815|
 
 
