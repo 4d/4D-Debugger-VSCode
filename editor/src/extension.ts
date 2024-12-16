@@ -234,6 +234,9 @@ function launch_exe(session: vscode.DebugSession, port: number, host : string | 
 			});
 			process.on("exit", (err) => {
 				vscode.debug.activeDebugConsole.append(`Process exited with code ${err}`);
+				if(err !== 0) {
+					resolve(new vscode.DebugAdapterInlineImplementation(new MockDebugSession("Error when launching the server")));
+				}
 			});
 
 			ctx.extensionContext.subscriptions.push(
