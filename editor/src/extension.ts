@@ -243,8 +243,9 @@ function launch_exe(session: vscode.DebugSession, port: number): vscode.Provider
 			);
 		}
 		catch (e) {
-			vscode.debug.activeDebugConsole.append(`Cannot launch the debugger: ${e}`);
-			resolve(undefined);
+			const message = `Cannot launch the debugger: ${e}`;
+			vscode.debug.activeDebugConsole.append(message);
+			resolve(new vscode.DebugAdapterInlineImplementation(new MockDebugSession(message)));
 		}
 	});
 }
