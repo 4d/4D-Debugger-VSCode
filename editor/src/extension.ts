@@ -135,9 +135,16 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 			}
 
 			if (!exec || !fs.existsSync(exec)) {
-				vscode.window.showErrorMessage(`The executable "${exec}" does not exist`);
-				if (exec === "") {
-					vscode.window.showInformationMessage(`The launch.json is missing the "exec" attribute. Please set the path to the 4D Server.`);
+				if (!exec) {
+					vscode.window.showInformationMessage(`The executable path should be set in the settings or in the launch.json.`, 'Open Settings').then(selection => {
+						if (selection === 'Open Settings') {
+							vscode.commands.executeCommand('workbench.action.openSettings', '4D-Debugger.executable');
+						}
+					});
+				}
+				else
+				{
+					vscode.window.showErrorMessage(`The executable "${exec}" does not exist`);
 				}
 				return undefined;
 			}
@@ -236,7 +243,7 @@ function launch_exe(session: vscode.DebugSession, port: number, host : string | 
 				vscode.debug.activeDebugConsole.append(`Process exited with code ${err}`);
 				if(err !== 0) {
 					// error message when the process does not stop correctly
-					resolve(new vscode.DebugAdapterInlineImplementation(new MockDebugSession("The process has exited with code " + err)));
+					resolve(new vscode.DebugAdapterInlineImplementation(new MockDebugSession("Failed to execute the server")));
 				}
 			});
 
