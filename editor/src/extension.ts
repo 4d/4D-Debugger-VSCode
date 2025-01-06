@@ -8,6 +8,7 @@ import * as os from 'os';
 import { InfoPlistManager } from './infoplist';
 import { MockDebugSession } from './mockDebug';
 import { Ctx } from './context';
+import { LabeledVersion } from './labeledVersion';
 const kPortNumber: number = 19815;
 let ctx: Ctx;
 export function activate(context: vscode.ExtensionContext) {
@@ -147,6 +148,14 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 					vscode.window.showErrorMessage(`The executable "${exec}" does not exist`);
 				}
 				return undefined;
+			}
+
+			if(exec) {
+				let currentVersion = LabeledVersion.get4DVersion(exec);
+				if(currentVersion.compare(LabeledVersion.fromString("20R8")) < 0) {
+					vscode.window.showErrorMessage("The 4D Server version is not compatible with the extension, please use a version equal or greater than 20R8");
+					return undefined;
+				}
 			}
 			if (!debugConfiguration.execArgs)
 				debugConfiguration.execArgs = [];

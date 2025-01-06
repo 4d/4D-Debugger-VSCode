@@ -130,13 +130,13 @@ export class LabeledVersion {
         return serverPath;
     }
 
-    public get4DVersion(inExePath: string): LabeledVersion {
+    static get4DVersion(inExePath: string): LabeledVersion {
         let labeledVersion = new LabeledVersion(0, 0, 0, 0, false, "stable", false);
 
-        const infoPlistPath = this._getInfoplistPath(inExePath);
+        const infoPlistPath = labeledVersion._getInfoplistPath(inExePath);
         if (fs.existsSync(infoPlistPath)) {
             const content: string = fs.readFileSync(infoPlistPath).toString();
-            const match = content.match(/CFBundleShortVersionString<\/key>\s*<string>(.*)<\/string>/mi);
+            const match = content.match(/<key>com\.4d\.version<\/key>\s*<string>([^<]+)<\/string>/mi);
             if (match !== null && match.length > 1) {
                 const matchVersion = match[1].match(/(([0-9]*R[0-9])|[0-9]+)\.([0-9]{2,})/);
                 if (matchVersion) {
