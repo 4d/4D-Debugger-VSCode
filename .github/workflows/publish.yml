@@ -1,0 +1,30 @@
+name: publish
+
+on:
+  workflow_call:
+
+jobs:
+  publish:
+    name: publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Nodejs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+      - name: Download artifact
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v7
+        with:
+          workflow: build_workflow.yml
+          name: package
+          path: ./editor/dist
+
+      - name: Publish Extension (Code Marketplace, release)
+        working-directory: editor
+        run: |
+          npm i
+          npm install --global @vscode/vsce
+          npx vsce publish --pat ${{ secrets.VS_MARKETPLACE_TOKEN }} --packagePath ./dist/*.vsix

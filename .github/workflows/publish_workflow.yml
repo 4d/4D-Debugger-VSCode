@@ -1,0 +1,14 @@
+name: publish_workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  call-build:
+    uses: ./.github/workflows/build.yml
+  call-publish:
+    needs: call-build
+    uses: ./.github/workflows/publish.yml
+    secrets: inherit
