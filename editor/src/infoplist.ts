@@ -1,7 +1,6 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
-import { LabeledVersion } from './labeledVersion';
 
 export class InfoPlistManager {
     private readonly _infoPlistPath : string;
@@ -25,34 +24,6 @@ export class InfoPlistManager {
             return path.join(serverPath, "..", "Resources", "Info.plist");
         }
         return serverPath;
-    }
-
-    public getVersion() : LabeledVersion{
-        let labeledVersion = new LabeledVersion(0, 0, 0, 0, false, "stable", false);
-
-        const match = this._content.match(/CFBundleShortVersionString<\/key>\s*<string>(.*)<\/string>/mi);
-        if (match !== null && match.length > 1) {
-            const matchVersion = match[1].match(/(([0-9]*R[0-9])|[0-9]+)\.([0-9]{2,})/);
-            if (matchVersion) {
-                if (matchVersion[2]) {
-                    labeledVersion = LabeledVersion.fromString(matchVersion[2]);
-                }
-                else if (matchVersion[1]) {
-                    labeledVersion = LabeledVersion.fromString(matchVersion[1]);
-                }
-                if (matchVersion[3]) {
-                    labeledVersion.changelist = Number(matchVersion[3]);
-                    if (labeledVersion.changelist > 0 && labeledVersion.version === 0) {
-                        labeledVersion.main = true;
-                    }
-                }
-            }
-            else
-            {
-                labeledVersion.main = true;
-            }
-        }
-        return labeledVersion;
     }
 
     public getExeName() : string {

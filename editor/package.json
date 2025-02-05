@@ -5,7 +5,7 @@
   "publisher": "4D",
   "icon": "images/icon.png",
   "description": "4D Debugger for Visual Studio Code",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.90.0"
   },
